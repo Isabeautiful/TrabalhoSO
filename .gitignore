@@ -1,0 +1,44 @@
+# .NET / C# 
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.dotCover
+publish/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.VC.db
+
+# ASP.NET Core
+appsettings.*.json
+wwwroot/lib/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Docker
+docker-compose.override.yml
+**/Dockerfile.*.swp
+**/docker-compose.override.yml.swp
+
+# PostgreSQL
+*.backup
+*.sql
+pgdata/
+
+# File database
+*.db
+
+# Logs
+*.log
+logs/
