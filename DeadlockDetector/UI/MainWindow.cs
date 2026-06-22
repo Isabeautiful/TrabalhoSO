@@ -156,10 +156,14 @@ public class MainWindow : Gtk.Window
     
     private int GetDuration()
     {
-        if (_txtDuration != null && int.TryParse(_txtDuration.Text, out int duration))
+        if (
+            _txtDuration != null 
+            && int.TryParse(_txtDuration.Text, out int duration)
+        )
         {
             return Math.Clamp(duration, 5, 300);
         }
+        
         return 60;
     }
 
