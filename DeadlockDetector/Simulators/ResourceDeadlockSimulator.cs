@@ -13,6 +13,11 @@ public class ResourceDeadlockSimulator
     private bool _isRunning = false;
     private SimulationConfig _config = new();
 
+    private bool _manualMode;
+    private SemaphoreSlim _stepPermission = new(0, 1);
+    private SemaphoreSlim _drawConfirmation = new(0, 1);
+    private SemaphoreSlim _transitionLock = new(1, 1);
+
     public event Action<string>? OnLog;
     public event Action? OnGraphChanged;
 
@@ -31,22 +36,41 @@ public class ResourceDeadlockSimulator
         _config = SimulationConfig.GetSpeedPreset(speed);
         OnLog?.Invoke($"Velocidade configurada para: {speed}");
     }
-    
+
     public void SetDeadlockChance(string chance)
     {
         _config.DeadlockProbability = SimulationConfig.GetDeadlockProbability(chance);
         OnLog?.Invoke($"Chance de deadlock configurada para: {chance} ({_config.DeadlockProbability * 100}%)");
     }
 
+    public void SetManualMode(bool manual)
+    {
+        _manualMode = manual;
+    }
+
+    public void ReleaseStep()
+    {
+        // Entrega no máximo uma permissão; ignora se já houver uma pendente.
+        if (_stepPermission.CurrentCount == 0)
+            _stepPermission.Release();
+    }
+
+    public void ConfirmDraw()
+    {
+        // Chamado pela janela após OnDrawGraph terminar.
+        if (_drawConfirmation.CurrentCount == 0)
+            _drawConfirmation.Release();
+    }
+
     public async Task Start(int durationSeconds = 60)
     {
         if (_isRunning) return;
-        
+
         _cts = new CancellationTokenSource();
         _isRunning = true;
-        
+
         var processos = new[] { "P1", "P2", "P3", "P4", "P5" };
-        
+
         for (int i = 0; i < processos.Length; i++)
         {
             var processo = processos[i];
@@ -55,17 +79,20 @@ public class ResourceDeadlockSimulator
             if (i < processos.Length - 1)
                 await Task.Delay(_config.ProcessStartDelayMs);
         }
-        
-        _ = Task.Run(async () =>
+
+        if (!_manualMode)
         {
-            while (_isRunning)
+            _ = Task.Run(async () =>
             {
-                await Task.Delay(_config.CheckIntervalMs);
-                CheckDeadlock();
-                OnGraphChanged?.Invoke();
-            }
-        });
-        
+                while (_isRunning)
+                {
+                    await Task.Delay(_config.CheckIntervalMs);
+                    CheckDeadlock();
+                    OnGraphChanged?.Invoke();
+                }
+            });
+        }
+
         _ = Task.Run(async () =>
         {
             await Task.Delay(durationSeconds * 1000);
@@ -77,13 +104,18 @@ public class ResourceDeadlockSimulator
     {
         _isRunning = false;
         _cts?.Cancel();
+
+        // Libera quaisquer esperas pendentes para que as tarefas possam terminar.
+        if (_stepPermission.CurrentCount == 0) _stepPermission.Release();
+        if (_drawConfirmation.CurrentCount == 0) _drawConfirmation.Release();
         OnLog?.Invoke("Simulacao parada");
     }
+
 
     private (string, string) SelectResources(string processId, List<string> resourceList)
     {
         bool tryDeadlock = _random.NextDouble() < _config.DeadlockProbability;
-        
+
         if (tryDeadlock)
         {
             return processId switch
@@ -95,7 +127,7 @@ public class ResourceDeadlockSimulator
                 _ => GetRandomResources(resourceList, false)
             };
         }
-        
+
         return GetRandomResources(resourceList, true);
     }
 
@@ -104,59 +136,69 @@ public class ResourceDeadlockSimulator
         int idx1 = _random.Next(resourceList.Count);
         int idx2 = _random.Next(resourceList.Count);
         while (idx2 == idx1) idx2 = _random.Next(resourceList.Count);
-        
+
         if (sortAscending)
         {
             var indices = new List<int> { idx1, idx2 };
             indices.Sort();
             return (resourceList[indices[0]], resourceList[indices[1]]);
         }
-        
+
         return (resourceList[idx1], resourceList[idx2]);
+    }
+
+    private async Task ExecuteTransition(Action graphChange)
+    {
+        var ct = _cts?.Token ?? CancellationToken.None;
+
+        if (_manualMode)
+            await _stepPermission.WaitAsync(ct);
+
+        await _transitionLock.WaitAsync(ct);
+        try
+        {
+            graphChange();
+            OnGraphChanged?.Invoke();
+        }
+        finally
+        {
+            _transitionLock.Release();
+        }
+
+        if (_manualMode)
+            await _drawConfirmation.WaitAsync(ct);
     }
 
     private async Task ProcessWork(string processId)
     {
         var resourceList = _resources.Keys.ToList();
-        
+
         while (_isRunning && !_cts!.IsCancellationRequested)
         {
             var (resource1, resource2) = SelectResources(processId, resourceList);
             bool tryDeadlock = _random.NextDouble() < _config.DeadlockProbability;
-            
-            await Task.Delay(_random.Next(10, 50));
-            
-            _graph.RequestResource(processId, resource1);
-            OnGraphChanged?.Invoke();
-            
+
+            await ExecuteTransition(() => _graph.RequestResource(processId, resource1));
+
             if (await _resources[resource1].WaitAsync(_config.AcquireTimeoutMs))
             {
-                _graph.AllocateResource(resource1, processId);
-                OnGraphChanged?.Invoke();
-                
+                await ExecuteTransition(() => _graph.AllocateResource(resource1, processId));
+
                 if (tryDeadlock && _random.NextDouble() < 0.3)
                     OnLog?.Invoke($"{processId} adquiriu {resource1} (modo conflito)");
-                
-                await Task.Delay(_random.Next(20, 100));
-                
-                _graph.RequestResource(processId, resource2);
-                OnGraphChanged?.Invoke();
-                
+
+                await ExecuteTransition(() => _graph.RequestResource(processId, resource2));
+
                 if (await _resources[resource2].WaitAsync(_config.AcquireTimeoutMs))
                 {
-                    _graph.AllocateResource(resource2, processId);
-                    OnGraphChanged?.Invoke();
-                    
-                    await Task.Delay(_config.ResourceHoldTimeMs);
-                    
+                    await ExecuteTransition(() => _graph.AllocateResource(resource2, processId));
+
                     _resources[resource2].Release();
-                    _graph.ReleaseResource(resource2, processId);
-                    OnGraphChanged?.Invoke();
-                    
+                    await ExecuteTransition(() => _graph.ReleaseResource(resource2, processId));
+
                     _resources[resource1].Release();
-                    _graph.ReleaseResource(resource1, processId);
-                    OnGraphChanged?.Invoke();
-                    
+                    await ExecuteTransition(() => _graph.ReleaseResource(resource1, processId));
+
                     if (_random.NextDouble() < 0.1)
                         OnLog?.Invoke($"{processId} completou trabalho com {resource1} e {resource2}");
                 }
@@ -164,22 +206,18 @@ public class ResourceDeadlockSimulator
                 {
                     if (_random.NextDouble() < 0.2)
                         OnLog?.Invoke($"{processId} timeout esperando {resource2}, liberando {resource1}");
-                    
+
                     _resources[resource1].Release();
-                    _graph.ReleaseResource(resource1, processId);
-                    OnGraphChanged?.Invoke();
+                    await ExecuteTransition(() => _graph.ReleaseResource(resource1, processId));
                 }
             }
             else
             {
                 if (_random.NextDouble() < 0.1)
                     OnLog?.Invoke($"{processId} timeout esperando {resource1}");
-                
-                _graph.ReleaseResource(resource1, processId);
-                OnGraphChanged?.Invoke();
+
+                await ExecuteTransition(() => _graph.ReleaseResource(resource1, processId));
             }
-            
-            await Task.Delay(_config.WorkDelayMs);
         }
     }
 
@@ -190,7 +228,7 @@ public class ResourceDeadlockSimulator
         {
             Interlocked.Increment(ref _deadlockCount);
             OnLog?.Invoke($"DEADLOCK DETECTADO! Processos: {string.Join(", ", result.DeadlockedProcesses)} (Total: {_deadlockCount})");
-            
+
             if (result.DeadlockedProcesses.Contains("P1") && result.DeadlockedProcesses.Contains("P2"))
                 OnLog?.Invoke("  -> Deadlock entre P1 e P2 (Impressora <-> Scanner)");
             else if (result.DeadlockedProcesses.Contains("P3") && result.DeadlockedProcesses.Contains("P4"))
