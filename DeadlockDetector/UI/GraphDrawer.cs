@@ -276,12 +276,10 @@ public class GraphDrawer
         _cr.Rectangle(panelX, panelY, panelWidth, panelHeight);
         _cr.FillPreserve();
 
-
         _cr.NewPath();
         _cr.SetSourceRGB(0.75, 0.75, 0.75);
         _cr.LineWidth = 1;
         _cr.Stroke();
-
 
         _cr.NewPath();
         _cr.SelectFontFace("Arial", FontSlant.Normal, FontWeight.Normal);
