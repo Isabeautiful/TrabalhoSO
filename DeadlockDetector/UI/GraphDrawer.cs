@@ -89,7 +89,7 @@ public class GraphDrawer
     {
         _cr.NewPath();
         _cr.SetSourceRGB(color.R, color.G, color.B);
-        _cr.LineWidth = 2;
+        _cr.LineWidth = 3.5;
 
         foreach (var edge in edges)
         {
@@ -167,7 +167,6 @@ public class GraphDrawer
         _cr.Arc(node.X, node.Y, size / 2, 0, 2 * Math.PI);
         _cr.FillPreserve();
 
-        _cr.NewPath();
         _cr.SetSourceRGB(1, 1, 1);
         _cr.Stroke();
 
@@ -212,7 +211,6 @@ public class GraphDrawer
 
         _cr.FillPreserve();
 
-        _cr.NewPath();
         _cr.SetSourceRGB(1, 1, 1);
         _cr.Stroke();
 
