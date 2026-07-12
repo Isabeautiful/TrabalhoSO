@@ -2,7 +2,7 @@
 
 ## Descrição
 
-Projeto responsável por simular processos requisitando e obtendo recursos compartilhados, e detectar a ocorrência de deadlocks nesse contexto, a partir de uma interface gráfica responsável por ilustrar tais interações, incluindo a requisição, alocação e deadlock.
+Projeto responsável por simular processos requisitando e obtendo recursos compartilhados, e a partir disso detectar a ocorrência de deadlocks ocorrendo nestas interações. A simulação e detecção é ilustrada a partir de uma interface gráfica, que é responsável por as interações, como a requisição, alocação e deadlock.
 
 ## Estrutura do Projeto
 
@@ -16,97 +16,110 @@ DeadlockDetector/
 └── README.md                 # Este arquivo
 ```
 
+## Tecnologias utilizadas
 
-## Demonstração
+Este software utilizou:
 
-O programa mostra em tempo real:
+- **IDE:** Visual Studio Code
+- **Linguagem:** C#
+- **Plataforma de execução:** .NET 8
+- **Framework de interface gráfica:** GTK# (GtkSharp 3.24)
+- **Sistema de renderização gráfica:** Cairo (utilizado pelo GTK para desenho dos elementos do grafo)
+
+## Ilustração dos processos
+
+O programa mostra passo a passo:
 - Processos (círculos azuis) e Recursos (quadrados verdes)
-- Solicitações de recursos (setas vermelhas)
-- Alocações de recursos (setas verdes)
-- Deadlocks quando detectados (nós vermelhos)
+- Solicitações de recursos (setas laranjas)
+- Alocações de recursos (setas azuis)
+- Deadlocks quando detectados (processos envolvidos ficam vermelhos)
+
+## Implementação da lógica
+
+A simulação cria múltiplos processos concorrentes que requisitam e utilizam recursos compartilhados, registrando cada requisição, alocação e liberação em um grafo de alocação de recursos. Durante a execução, os processos seguem um comportamento aleatório seguindo uma probabilidade (que pode ser configurada) de formação de deadlocks, enquanto o sistema monitora continuamente a simulação para identificar ciclos no grafo de espera entre processos e recursos, que é exatamente o que caracteriza um deadlock.
 
 ## Como Executar
 
 ### Instalação Manual
 
-#### Instalar .NET 6.0
+#### 1. Instalar .NET 8.0
 
-**Ubuntu/Debian:**
+Ubuntu/Debian:
 ```bash
 sudo apt update
-sudo apt install -y dotnet6
+sudo apt install -y dotnet8
 ```
 
-**Fedora:**
+Fedora:
 ```bash
-sudo dnf install dotnet-sdk-6.0
+sudo dnf install dotnet-sdk-8.0
 ```
 
-**Windows:**
+Windows:
 Baixar e instalar de: https://dotnet.microsoft.com/download
 
-**macOS:**
+macOS:
 ```bash
 brew install dotnet-sdk
 ```
 
-#### Instalar GTK (para visualização)
+#### 2. Instalar GTK (para visualização)
 
-**Ubuntu/Debian:**
+Ubuntu/Debian:
 ```bash
 sudo apt install -y libgtk-3-0 libcairo2
 ```
 
-**Fedora:**
+Fedora:
 ```bash
 sudo dnf install gtk3 cairo
 ```
 
-**Windows:**
+Windows:
 O GTK será instalado automaticamente pelo NuGet
 
-**macOS:**
+macOS:
 ```bash
 brew install gtk+3 cairo
 ```
 
-#### Executar o Programa
+#### 3. Executar o Programa
+
+Já dentro do diretório raíz do projeto, executar os seguintes comandos:
 
 ```bash
-# Entrar no diretório
-cd DeadlockDetector
-
 # Restaurar pacotes
 dotnet restore
 
-# Compilar
+# Compilar para bin/Debug/net8.0/DeadlockDetector
 dotnet build
 
-# Executar
-dotnet run --project DeadlockDetector
+# Executar arquivo gerado, ou utilizar o comando
+dotnet run
 ```
 
 ## Como Usar o Programa
 
-1. **Selecionar Velocidade**:
-   - Muito Lento: Bom para observar cada operação
-   - Normal: Equilíbrio entre velocidade e observação
-   - Muito Rápido: Deadlocks ocorrem rapidamente
-
-2. **Selecionar Chance de Deadlock**:
+1. **Selecionar Chance de Deadlock**:
    - Baixa (15%): Raros deadlocks
    - Média (40%): Deadlocks ocasionais
    - Alta (70%): Deadlocks frequentes
    - Muito Alta (90%): Deadlocks muito comuns
 
-3. **Clicar em "Iniciar"** para começar a simulação
+2. **Clicar em "Iniciar"** 
 
-4. **Observar**:
-   - O grafo sendo desenhado em tempo real
+Na barra superior, clicar em "Iniciar" para inicializar a simulação.
+
+3. **Avançar passo a passo**:
+
+Clicar sucessivas vezes em "Próximo", para avançar os passos da simulação e ver:
+   - O grafo sendo desenhado com o avanço da simulação
    - Logs das operações
    - Deadlocks quando ocorrem
 
-5. **Clicar em "Parar"** ou aguardar o tempo da simulação
+4. **Clicar em "Reset" para recomeçar** 
+
+Caso queira começar um nova simulação, use o botão de Reset na barra superior, e volte do passo 2.
 
 ## Exemplo de Deadlock
 
@@ -117,17 +130,11 @@ Quando ocorre um deadlock, você verá no log:
 [HH:MM:SS.fff] P2 adquiriu Scanner (modo conflito)
 [HH:MM:SS.fff] P1 tentando adquirir Scanner
 [HH:MM:SS.fff] P2 tentando adquirir Impressora
-[HH:MM:SS.fff] DEADLOCK DETECTADO! Processos: P1, P2 (Total: 1)
+[HH:MM:SS.fff] DEADLOCK DETECTADO! Processos: P1, P2 (Total: 2)
 [HH:MM:SS.fff]   -> Deadlock entre P1 e P2 (Impressora <-> Scanner)
 ```
 
 ## Solução de Problemas
-
-### Erro: "Não foi possível localizar um projeto"
-```bash
-# Use o comando completo:
-dotnet run --project DeadlockDetector
-```
 
 ### Erro: GTK não encontrado
 ```bash
