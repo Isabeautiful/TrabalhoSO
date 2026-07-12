@@ -60,7 +60,7 @@ public class MainWindow : Gtk.Window
         _btnNext.Clicked += OnNextClicked;
         _btnNext.Sensitive = false;
 
-        var lblSpeed = new Label("Velocidade:");
+        // var lblSpeed = new Label("Velocidade:");
         // _cmbSpeed = new ComboBoxText();
         // _cmbSpeed.AppendText("Muito Lento");
         // _cmbSpeed.AppendText("Lento");
@@ -89,7 +89,7 @@ public class MainWindow : Gtk.Window
         toolbar.PackStart(_btnNext, false, false, 0);
         toolbar.PackStart(_btnReset, false, false, 0);
         toolbar.PackStart(new Separator(Orientation.Vertical), false, false, 10);
-        toolbar.PackStart(lblSpeed, false, false, 0);
+        // toolbar.PackStart(lblSpeed, false, false, 0);
         // toolbar.PackStart(_cmbSpeed, false, false, 0);
         toolbar.PackStart(lblChance, false, false, 0);
         toolbar.PackStart(_cmbDeadlockChance, false, false, 0);

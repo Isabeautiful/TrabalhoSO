@@ -2,22 +2,18 @@
 
 ## Descrição
 
-Simulador visual de detecção de deadlocks usando grafo de alocação de recursos. Demonstra como deadlocks ocorrem em sistemas operacionais quando processos competem por recursos compartilhados.
-
+Projeto responsável por simular processos requisitando e obtendo recursos compartilhados, e detectar a ocorrência de deadlocks nesse contexto, a partir de uma interface gráfica responsável por ilustrar tais interações, incluindo a requisição, alocação e deadlock.
 
 ## Estrutura do Projeto
 
 ```
 DeadlockDetector/
-├── Domain/                  # Lógica do grafo
-├── Simulators/              # Simulador de processos
-├── UI/                      # Interface gráfica
-├── Program.cs              # Ponto de entrada
-├── DeadlockDetector.csproj # Configuração do projeto
-├── run.sh                  # Script para Linux/macOS
-├── run.bat                 # Script para Windows
-├── Dockerfile              # Container Docker
-└── README.md              # Este arquivo
+├── Domain/                   # Lógica do grafo
+├── Simulators/               # Simulador de processos
+├── UI/                       # Interface gráfica
+├── Program.cs                # Ponto de entrada
+├── DeadlockDetector.csproj   # Configuração do projeto
+└── README.md                 # Este arquivo
 ```
 
 
