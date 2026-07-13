@@ -38,6 +38,18 @@ O programa mostra passo a passo:
 
 A simulação cria múltiplos processos concorrentes que requisitam e utilizam recursos compartilhados, registrando cada requisição, alocação e liberação em um grafo de alocação de recursos. Durante a execução, os processos seguem um comportamento aleatório seguindo uma probabilidade (que pode ser configurada) de formação de deadlocks, enquanto o sistema monitora continuamente a simulação para identificar ciclos no grafo de espera entre processos e recursos, que é exatamente o que caracteriza um deadlock.
 
+## Referência utilizada
+
+A referência principal foi um trecho da nona edição do livro "Operating System Concepts", dos autores Abraham Silberschatz, Greg Gagne, and Peter Baer Galvin. Capítulo 7, item 7.6 - Deadlock Detection.
+
+No terceiro parágrafo do item 7.6.1 - Single Instance of Each Resource Type, se encontra o principal trecho utilizado nesta aplicação:
+
+> As before, a deadlock exists in the system if and only if the wait-for graph contains a cycle. To detect deadlocks, the system needs to maintain the wait-for graph and periodically invoke an algorithm that searches for a cycle in the graph. An algorithm to detect a cycle in a graph requires an order of n2 operations, where n is the number of vertices in the graph.
+
+Em tradução livre:
+
+> Portanto, um deadlock existe no sistema se, e somente se, o grafo de espera contém um ciclo. Para detectar deadlocks, o sistema deve manter um grafo de espera e periodicamente invocar um algoritmo que busque por ciclos no grafo. Um algoritmo de detecção de ciclos em grafos possui ordem de no mínimo n2 operações, onde n é o número de vértices no grafo.
+
 ## Como Executar
 
 ### Instalação Manual
